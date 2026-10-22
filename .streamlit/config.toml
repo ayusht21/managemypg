@@ -4,3 +4,6 @@ base = "light"
 
 [server]
 runOnSave = true
+
+[client]
+toolbarMode = "minimal"

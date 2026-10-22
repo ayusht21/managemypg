@@ -21,6 +21,16 @@ st.markdown(
     """<style>
     [data-testid="stMetricValue"] { font-size: 1.6rem; }
     [data-testid="stMetricLabel"] p { font-size: 0.85rem; }
+    /* Phones: keep metric rows two-across instead of one long stacked list */
+    @media (max-width: 640px) {
+        [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stMetric"]) {
+            flex-wrap: wrap; gap: 0.75rem 1rem;
+        }
+        [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] [data-testid="stMetric"]) > [data-testid="stColumn"] {
+            flex: 1 1 calc(50% - 1rem) !important; min-width: calc(50% - 1rem) !important;
+        }
+        [data-testid="stMetricValue"] { font-size: 1.3rem; }
+    }
     </style>""",
     unsafe_allow_html=True,
 )
