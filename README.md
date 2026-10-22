@@ -34,6 +34,13 @@ rooms & beds, who lives where, and who has paid rent.
 pip install -r requirements.txt
 streamlit run app.py
 ```
+On first start the app creates a **demo account** with two sample PGs (rooms, tenants, payments,
+expenses). Tap **👀 Try the demo** on the login screen, or log in with `demo123` / `demo123`.
+The demo account can't delete PGs or change its password. Set `MANAGEMYPG_DEMO=0` to turn the demo off.
+
+**Showing it on a phone:** run the app, then open the "Network URL" that Streamlit prints
+(e.g. `http://192.168.0.102:8501`) on a phone connected to the same Wi-Fi.
+
 Data is stored in `managemypg.db` (SQLite) next to the app. Set `MANAGEMYPG_DB=/path/to/file.db` to use another location.
 
 ## Notes

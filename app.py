@@ -3,6 +3,7 @@
 Run with:  streamlit run app.py
 """
 
+import os
 from datetime import date
 from urllib.parse import quote
 
@@ -13,9 +14,24 @@ import streamlit as st
 import auth
 import db
 import receipts
+import seed_demo
 
 st.set_page_config(page_title="ManageMyPG", page_icon="🏠", layout="wide")
 db.init_db()
+
+# Demo account with sample PGs, created on first start so a fresh copy (e.g. from GitHub) has data to show.
+# Set MANAGEMYPG_DEMO=0 to turn it off.
+DEMO_ENABLED = os.environ.get("MANAGEMYPG_DEMO", "1") != "0"
+
+
+@st.cache_resource
+def _ensure_demo():
+    seed_demo.main()
+    return True
+
+
+if DEMO_ENABLED:
+    _ensure_demo()
 
 st.markdown(
     """<style>
@@ -127,6 +143,10 @@ def receipt_pdf(pg, payment_ids=None, month=None):
     return receipts.build_receipts(pg, st.session_state["user"]["name"], rows), rows
 
 
+def is_demo():
+    return st.session_state["user"]["email"] == seed_demo.EMAIL
+
+
 def uid():
     return st.session_state["user"]["id"]
 
@@ -155,6 +175,15 @@ def auth_screen():
                     user, err = auth.login(email, password)
                     if err:
                         st.error(err)
+                    else:
+                        st.session_state["user"] = user
+                        st.rerun()
+            if DEMO_ENABLED:
+                st.caption(f"Just looking? Demo login: **{seed_demo.EMAIL}** / **{seed_demo.PASSWORD}**")
+                if st.button("👀 Try the demo", width="stretch"):
+                    user, err = auth.login(seed_demo.EMAIL, seed_demo.PASSWORD)
+                    if err:
+                        st.error("Demo account isn't available right now.")
                     else:
                         st.session_state["user"] = user
                         st.rerun()
@@ -939,18 +968,24 @@ def page_settings(pg):
             db.update_pg(uid(), pg["id"], **data)
             flash("PG updated.")
             st.rerun()
-        with st.expander("⚠️ Delete this PG"):
-            st.warning("This permanently deletes the PG with all its rooms, tenants and payment records.")
-            confirm = st.text_input(f"Type **{pg['name']}** to confirm")
-            if st.button("Delete PG", type="primary", disabled=confirm != pg["name"]):
-                db.delete_pg(uid(), pg["id"])
-                flash("PG deleted.", "🗑️")
-                goto("🏢 My PGs", None)
+        if is_demo():
+            st.caption("Deleting PGs is turned off in the demo account.")
+        else:
+            with st.expander("⚠️ Delete this PG"):
+                st.warning("This permanently deletes the PG with all its rooms, tenants and payment records.")
+                confirm = st.text_input(f"Type **{pg['name']}** to confirm")
+                if st.button("Delete PG", type="primary", disabled=confirm != pg["name"]):
+                    db.delete_pg(uid(), pg["id"])
+                    flash("PG deleted.", "🗑️")
+                    goto("🏢 My PGs", None)
         st.divider()
 
     st.subheader("Account")
     u = st.session_state["user"]
     st.write(f"**{u['name']}** · {u['email']} · {u['phone'] or ''}")
+    if is_demo():
+        st.caption("Changing the password is turned off in the demo account, so it keeps working for everyone.")
+        return
     with st.form("change_pw", clear_on_submit=True):
         old = st.text_input("Current password", type="password")
         new = st.text_input("New password", type="password")
